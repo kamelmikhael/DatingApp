@@ -2,7 +2,7 @@
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Dating App</a>
 
-        <ul class="navbar-nav mr-auto" *ngIf="loggedIn">
+        <ul class="navbar-nav mr-auto" *ngIf="accountService.currentUserLoggedIn$ | async">
             <li class="nav-item">
                 <a class="nav-link" href="#">Matches</a>
             </li>
@@ -13,20 +13,23 @@
                 <a class="nav-link" href="#">Messages</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" (click)="logout()">Logout</a>
+                <a class="nav-link" href="#">Edit Profile</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#" (click)="logout()">Logout</a>
             </li>
         </ul>
 
-        <div class="dropdown" *ngIf="loggedIn">
-            <a class="dropdown-toggle text-light">Welcome user</a>
-            
-            <div class="dropdown-menu">
-                <a class="dropdown-item">Edit Profile</a>
-                <a class="dropdown-item" (click)="logout()">Logout</a>
-            </div>
+        <div class="dropdown" *ngIf="accountService.currentUserLoggedIn$ | async">
+            <a class="text-light">Welcome user</a>
         </div>
 
-        <form #loginForm="ngForm" class="form-inline mt-2 mt-md-0" (ngSubmit)="login()"  *ngIf="!loggedIn" autocomplete="off">
+        <form 
+            class="form-inline mt-2 mt-md-0" 
+            #loginForm="ngForm" 
+            (ngSubmit)="login()" 
+            *ngIf="(accountService.currentUserLoggedIn$ | async) === null"
+            autocomplete="off">
             <input class="form-control mr-sm-2" type="text" name="userName" [(ngModel)]="model.userName" placeholder="Username">
             <input class="form-control mr-sm-2" type="password" name="password" [(ngModel)]="model.password" placeholder="Password">
             <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Login</button>

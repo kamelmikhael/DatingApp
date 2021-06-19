@@ -1,15 +1,56 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { SettingService } from './setting.service';
+import { environment } from 'src/environments/environment';
+import { map } from 'rxjs/operators';
+import { UserLoginResponse } from '../_models/userLoginResponse';
+import { ReplaySubject } from 'rxjs';
+import { UserRegisterModel } from '../_models/userRegisterModel';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AccountService {
 
-  constructor(private setting: SettingService, private http: HttpClient) { }
+  // Store the current logged-in user
+  private currentUserSource = new ReplaySubject<UserLoginResponse>(1);
+  currentUserLoggedIn$ = this.currentUserSource.asObservable(); // contains user object or null
+
+  constructor(private http: HttpClient) { }
+
+  register(input: UserRegisterModel) {
+    return this.http.post(`${environment.apiUrl}/account/register`, input).pipe(
+      map((user: UserLoginResponse) => {
+        if (user) {
+          localStorage.setItem(environment.userLocalstorageKey, JSON.stringify(user));
+          this.setCurrentUserSource(user);
+        }
+        // return user;
+      })
+    );
+  }
 
   login(input: any) {
-    return this.http.post(`${this.setting.baseUrl}/account/login`, input);
+    return this.http.post(`${environment.apiUrl}/account/login`, input).pipe(
+      map((user: UserLoginResponse) => {
+        if (user) {
+          localStorage.setItem(environment.userLocalstorageKey, JSON.stringify(user));
+          this.setCurrentUserSource(user);
+        }
+        // return user;
+      })
+    );
+  }
+
+  logout() {
+    localStorage.removeItem(environment.userLocalstorageKey);
+    this.setCurrentUserSource(null);
+  }
+
+  setCurrentUserSource(user: UserLoginResponse) {
+    this.currentUserSource.next(user);
+  }
+
+  getCurrentUserFromLocalStorage(): UserLoginResponse {
+    return JSON.parse(localStorage.getItem(environment.userLocalstorageKey)) as UserLoginResponse;
   }
 }

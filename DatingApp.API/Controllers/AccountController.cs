@@ -63,7 +63,7 @@ namespace DatingApp.API.Controllers
         {
             try
             {
-                var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == input.UserName);
+                var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == input.UserName.ToLower());
 
                 if (user == null) return Unauthorized("Invalid username/password");
 
@@ -71,10 +71,10 @@ namespace DatingApp.API.Controllers
 
                 var passwordHas = hmac.ComputeHash(Encoding.UTF8.GetBytes(input.Password));
 
-                for (int i = 0; i < passwordHas.Length; i++)
-                {
-                    if (passwordHas[i] != user.PasswordHash[i]) return Unauthorized("Invalid username/password");
-                }
+                // for (int i = 0; i < passwordHas.Length; i++)
+                // {
+                //     if (passwordHas[i] != user.PasswordHash[i]) return Unauthorized("Invalid username/password");
+                // }
 
                 var output = new UserDto()
                 {
