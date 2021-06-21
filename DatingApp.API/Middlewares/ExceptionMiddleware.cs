@@ -12,11 +12,11 @@ namespace DatingApp.API.Middlewares
     public class ExceptionMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger _logger;
+        private readonly ILogger<ExceptionMiddleware> _logger;
         private readonly IHostEnvironment _env;
 
         public ExceptionMiddleware(RequestDelegate next, 
-              ILogger logger,
+              ILogger<ExceptionMiddleware> logger,
               IHostEnvironment env)
         {
             _next = next;
