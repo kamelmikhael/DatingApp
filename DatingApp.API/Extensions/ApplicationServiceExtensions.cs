@@ -1,4 +1,5 @@
 using DatingApp.API.Data;
+using DatingApp.API.Helpers;
 using DatingApp.API.Interfaces;
 using DatingApp.API.Services;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,10 @@ namespace DatingApp.API.Extensions
         {
             #region services DI
             services.AddScoped<ITokenService, TokenService>();
+            
+            services.AddScoped<IUserRepository, UserRepository>();
+
+            services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
             #endregion
 
             #region configure DbContext
