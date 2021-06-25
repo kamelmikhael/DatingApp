@@ -21,7 +21,6 @@ export class AccountService {
     return this.http.post(`${environment.apiUrl}/account/register`, input).pipe(
       map((user: UserLoginResponse) => {
         if (user) {
-          localStorage.setItem(environment.userLocalstorageKey, JSON.stringify(user));
           this.setCurrentUserSource(user);
         }
         // return user;
@@ -33,7 +32,6 @@ export class AccountService {
     return this.http.post(`${environment.apiUrl}/account/login`, input).pipe(
       map((user: UserLoginResponse) => {
         if (user) {
-          localStorage.setItem(environment.userLocalstorageKey, JSON.stringify(user));
           this.setCurrentUserSource(user);
         }
         // return user;
@@ -47,6 +45,7 @@ export class AccountService {
   }
 
   setCurrentUserSource(user: UserLoginResponse) {
+    localStorage.setItem(environment.userLocalstorageKey, JSON.stringify(user));
     this.currentUserSource.next(user);
   }
 
