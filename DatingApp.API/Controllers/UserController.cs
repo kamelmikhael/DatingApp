@@ -6,6 +6,7 @@ using AutoMapper;
 using DatingApp.API.DTOs;
 using DatingApp.API.Entities;
 using DatingApp.API.Extensions;
+using DatingApp.API.Helpers;
 using DatingApp.API.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -32,9 +33,19 @@ namespace DatingApp.API.Controllers
 
         //GET: api/user
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
+        public async Task<ActionResult<PagedList<MemberDto>>> GetUsers([FromQuery]UserParams userParams)
         {
-            return Ok(await _repository.GetMembersAsync());
+            var currentUser = await _repository.GetMemberAsync(User.GetUserName());
+            userParams.CurrentUserName = currentUser.UserName;
+
+            if(string.IsNullOrEmpty(userParams.Gender)) 
+            {
+                userParams.Gender = currentUser.Gender == "male" ? "female" : "male";
+            }
+
+            var users = await _repository.GetMembersAsync(userParams);
+            Response.AddPaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages);
+            return Ok(users);
         }
 
         //GET: api/user/smith
@@ -49,7 +60,7 @@ namespace DatingApp.API.Controllers
         {
             //Get the current logged-in user
             // var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userName = User.GetCurrentLoggedInUserName();
+            var userName = User.GetUserName();
 
             var dbUser = await _repository.GetUserByUserNameAsync(userName);
             
@@ -65,7 +76,7 @@ namespace DatingApp.API.Controllers
         [HttpPost("add-photo")]
         public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
         {
-            var dbUser = await _repository.GetUserByUserNameAsync(User.GetCurrentLoggedInUserName());
+            var dbUser = await _repository.GetUserByUserNameAsync(User.GetUserName());
 
             var uploadResult = await _photoService.AddPhotoAsync(file);
             if(uploadResult.Error != null) 
@@ -97,7 +108,7 @@ namespace DatingApp.API.Controllers
         [HttpPut("set-main-photo/{photoId}")]
         public async Task<ActionResult> SetMainPhoto(int photoId)
         {
-            var dbUser = await _repository.GetUserByUserNameAsync(User.GetCurrentLoggedInUserName());
+            var dbUser = await _repository.GetUserByUserNameAsync(User.GetUserName());
 
             var photo = dbUser.Photos.FirstOrDefault(x => x.Id == photoId);
 
@@ -125,7 +136,7 @@ namespace DatingApp.API.Controllers
         [HttpDelete("delete-photo/{photoId}")]
         public async Task<ActionResult> DeletePhoto(int photoId)
         {
-            var dbUser = await _repository.GetUserByUserNameAsync(User.GetCurrentLoggedInUserName());
+            var dbUser = await _repository.GetUserByUserNameAsync(User.GetUserName());
 
             var photoToDelete = dbUser.Photos.FirstOrDefault(x => x.Id == photoId);
 

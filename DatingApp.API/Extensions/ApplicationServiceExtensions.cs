@@ -22,6 +22,10 @@ namespace DatingApp.API.Extensions
             services.AddScoped<IUserRepository, UserRepository>();
             #endregion
 
+            #region Action Filters
+            services.AddScoped<LogUserActivity>();
+            #endregion
+
             #region Configure AutoMapper
             services.AddAutoMapper(typeof(AutoMapperProfiles).Assembly);
             #endregion
