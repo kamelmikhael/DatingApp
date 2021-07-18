@@ -21,6 +21,7 @@ namespace DatingApp.API.Extensions
             services.AddScoped<IPhotoService, PhotoService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ILikeRepository, LikeRepository>();
+            services.AddScoped<IMessageRepository, MessageRepository>();
             #endregion
 
             #region Action Filters
