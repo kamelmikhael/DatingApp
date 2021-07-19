@@ -45,11 +45,25 @@ export class AccountService {
   }
 
   setCurrentUserSource(user: UserLoginResponse) {
+    if(user != null) {
+      user.roles = [];
+      const roles = this.getDecodedToken(user.token).role;
+      if(Array.isArray(roles)) {
+        user.roles = roles;
+      } else {
+        user.roles.push(roles);
+      }
+    }
+
     localStorage.setItem(environment.userLocalstorageKey, JSON.stringify(user));
     this.currentUserSource.next(user);
   }
 
   getCurrentUserFromLocalStorage(): UserLoginResponse {
     return JSON.parse(localStorage.getItem(environment.userLocalstorageKey)) as UserLoginResponse;
+  }
+
+  getDecodedToken(token) {
+    return JSON.parse(atob(token.split('.')[1]));
   }
 }
