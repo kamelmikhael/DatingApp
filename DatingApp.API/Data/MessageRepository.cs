@@ -92,20 +92,10 @@ namespace DatingApp.API.Data
                         || m.Recipient.UserName == recipientUsername
                         && m.Sender.UserName == currentUsername && m.SenderDeleted == false
                 )
-                //.MarkUnreadAsRead(currentUsername)
+                .MarkUnreadAsRead(currentUsername)
                 .OrderBy(m => m.DateSend)
                 .ProjectTo<MessageDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
-
-            var unreadMessages = messages.Where(m => m.DateRead == null && m.RecipientUserName == currentUsername).ToList();
-
-            if (unreadMessages.Any())
-            {
-                foreach (var message in unreadMessages)
-                {
-                    message.DateRead = DateTime.UtcNow;
-                }
-            }
 
             return messages;
         }
