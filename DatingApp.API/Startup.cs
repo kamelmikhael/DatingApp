@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using DatingApp.API.SignalR;
 
 namespace DatingApp.API
 {
@@ -32,6 +33,8 @@ namespace DatingApp.API
             services.AddCors();
 
             services.AddIdentityServices(Configuration); // Extension method
+
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,7 +53,11 @@ namespace DatingApp.API
 
             app.UseRouting();
 
-            app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().WithOrigins(Configuration.GetSection("CORS:Origins").Value));
+            app.UseCors(x => x.AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials()
+                .WithOrigins(Configuration.GetSection("CORS:Origins").Value)
+            );
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -58,6 +65,8 @@ namespace DatingApp.API
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<PresenceHub>("hubs/presence");
+                endpoints.MapHub<MessageHub>("hubs/message");
             });
         }
     }

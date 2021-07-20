@@ -16,7 +16,7 @@ namespace DatingApp.API.Entities
 
         public string Content { get; set; }
         public DateTime? DateRead { get; set; }
-        public DateTime DateSend { get; set; } = DateTime.Now;
+        public DateTime DateSend { get; set; } = DateTime.UtcNow;
         public bool SenderDeleted { get; set; }
         public bool RecipientDeleted { get; set; }
     }
