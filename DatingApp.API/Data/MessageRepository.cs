@@ -70,51 +70,23 @@ namespace DatingApp.API.Data
         {
             var query = _context.Messages
                 .OrderByDescending(x => x.DateSend)
+                .ProjectTo<MessageDto>(_mapper.ConfigurationProvider)
                 .AsQueryable();
 
             query = messageParams.Container switch
             {
-                "Inbox" => query.Where(x => x.Recipient.UserName == messageParams.UserName && !x.RecipientDeleted),
-                "Outbox" => query.Where(x => x.Sender.UserName == messageParams.UserName && !x.SenderDeleted),
-                _ => query.Where(x => x.Recipient.UserName == messageParams.UserName && !x.RecipientDeleted && x.DateRead == null)
+                "Inbox" => query.Where(x => x.RecipientUserName == messageParams.UserName && !x.RecipientDeleted),
+                "Outbox" => query.Where(x => x.SenderUserName == messageParams.UserName && !x.SenderDeleted),
+                _ => query.Where(x => x.RecipientUserName == messageParams.UserName && !x.RecipientDeleted && x.DateRead == null)
             };
 
-            var messages = query.ProjectTo<MessageDto>(_mapper.ConfigurationProvider);
-
-            return await PagedList<MessageDto>.CreateAsync(messages, messageParams.PageNumber, messageParams.PageSize);
+            return await PagedList<MessageDto>.CreateAsync(query, messageParams.PageNumber, messageParams.PageSize);
         }
-
-        // public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUserName, string recipientUserName)
-        // {
-        //     var messages = await _context.Messages
-        //         .Include(x => x.Sender.Photos)
-        //         .Include(x => x.Recipient.Photos)
-        //         .Where(x => 
-        //             x.Sender.UserName == currentUserName && x.Recipient.UserName == recipientUserName
-        //             ||
-        //             x.Sender.UserName == recipientUserName && x.Recipient.UserName == currentUserName
-        //         )
-        //         .OrderBy(x => x.DateSend)
-        //         .ToListAsync();
-
-        //     var unreadMessages = messages
-        //         .Where(x => x.DateRead == null && x.Recipient.UserName == currentUserName)
-        //         .Select(x => {
-        //             x.DateRead = DateTime.Now;
-        //             return x;
-        //         }).ToList();
-
-        //     if(unreadMessages.Any()) await _context.SaveChangesAsync();
-
-        //     return _mapper.Map<IEnumerable<MessageDto>>(messages);
-        // }
-
+        
         public async Task<IEnumerable<MessageDto>> GetMessageThread(string currentUsername,
             string recipientUsername)
         {
             var messages = await _context.Messages
-                .Include(m => m.Sender).ThenInclude(s => s.Photos)
-                .Include(m => m.Recipient).ThenInclude(r => r.Photos)
                 .Where(m => m.Recipient.UserName == currentUsername && m.RecipientDeleted == false
                         && m.Sender.UserName == recipientUsername
                         || m.Recipient.UserName == recipientUsername
@@ -122,7 +94,7 @@ namespace DatingApp.API.Data
                 )
                 //.MarkUnreadAsRead(currentUsername)
                 .OrderBy(m => m.DateSend)
-                //.ProjectTo<MessageDto>(_mapper.ConfigurationProvider)
+                .ProjectTo<MessageDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
             var unreadMessages = messages.Where(m => m.DateRead == null && m.RecipientUserName == currentUsername).ToList();
@@ -133,11 +105,9 @@ namespace DatingApp.API.Data
                 {
                     message.DateRead = DateTime.UtcNow;
                 }
-                await _context.SaveChangesAsync();
             }
 
-            //return messages;
-            return _mapper.Map<IEnumerable<MessageDto>>(messages);
+            return messages;
         }
 
         public void RemoveConnection(Connection connection)
@@ -145,9 +115,5 @@ namespace DatingApp.API.Data
             _context.Connections.Remove(connection);
         }
 
-        public async Task<bool> SaveAllAsync()
-        {
-            return await _context.SaveChangesAsync() > 0;
-        }
     }
 }

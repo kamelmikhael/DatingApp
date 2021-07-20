@@ -38,7 +38,7 @@ namespace DatingApp.API.Helpers
                         src => src.Recipient.Photos.FirstOrDefault(p => p.IsMain).Url
                     )
                 );
-            CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
+            //CreateMap<DateTime, DateTime>().ConvertUsing(d => DateTime.SpecifyKind(d, DateTimeKind.Utc));
         }
     }
 }

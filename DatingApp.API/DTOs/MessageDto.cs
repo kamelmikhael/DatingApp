@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace DatingApp.API.DTOs
 {
@@ -17,5 +18,11 @@ namespace DatingApp.API.DTOs
         public string Content { get; set; }
         public DateTime? DateRead { get; set; }
         public DateTime DateSend { get; set; }
+
+        [JsonIgnore]
+        public bool RecipientDeleted { get; set; }
+
+        [JsonIgnore]
+        public bool SenderDeleted { get; set; }
     }
 }

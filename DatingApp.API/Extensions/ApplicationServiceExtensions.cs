@@ -20,9 +20,13 @@ namespace DatingApp.API.Extensions
             #region services DI
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IPhotoService, PhotoService>();
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<ILikeRepository, LikeRepository>();
-            services.AddScoped<IMessageRepository, MessageRepository>();
+            #endregion
+
+            #region Repository/UnitOfWork DI
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            // services.AddScoped<IUserRepository, UserRepository>();
+            // services.AddScoped<ILikeRepository, LikeRepository>();
+            // services.AddScoped<IMessageRepository, MessageRepository>();
             #endregion
 
             #region SignalR

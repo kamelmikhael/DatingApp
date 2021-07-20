@@ -14,16 +14,13 @@ namespace DatingApp.API.Controllers
     [Authorize]
     public class MessagesController : BaseApiController
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IMessageRepository _messageRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-        public MessagesController(IUserRepository userRepository, 
-            IMessageRepository messageRepository,
+        public MessagesController(IUnitOfWork unitOfWork,
             IMapper mapper)
         {
-            _userRepository = userRepository;
-            _messageRepository = messageRepository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
@@ -35,8 +32,8 @@ namespace DatingApp.API.Controllers
             if(senderUserName == createMessageDto.ReceipientUserName.ToLower())
                 return BadRequest("You can not send messages for yourself");
 
-            var sender = await _userRepository.GetUserByUserNameAsync(senderUserName);
-            var receipient = await _userRepository.GetUserByUserNameAsync(createMessageDto.ReceipientUserName);
+            var sender = await _unitOfWork.UserRepository.GetUserByUserNameAsync(senderUserName);
+            var receipient = await _unitOfWork.UserRepository.GetUserByUserNameAsync(createMessageDto.ReceipientUserName);
 
             if(receipient == null) return NotFound();
 
@@ -49,9 +46,9 @@ namespace DatingApp.API.Controllers
                 Content = createMessageDto.Content,
             };
 
-            _messageRepository.AddMessage(message);
+            _unitOfWork.MessageRepository.AddMessage(message);
 
-            if(await _messageRepository.SaveAllAsync())
+            if(await _unitOfWork.Complete())
                 return Ok(_mapper.Map<MessageDto>(message));
 
             return BadRequest("Failed to add message");
@@ -62,26 +59,18 @@ namespace DatingApp.API.Controllers
         {
             messageParams.UserName = User.GetUserName();
 
-            var messages = await _messageRepository.GetMessagesForUser(messageParams);
+            var messages = await _unitOfWork.MessageRepository.GetMessagesForUser(messageParams);
 
             Response.AddPaginationHeader(messages.CurrentPage, messages.PageSize, messages.TotalCount, messages.TotalPages);
 
             return Ok(messages);
         }
 
-        [HttpGet("thread/{userName}")]
-        public async Task<ActionResult<IEnumerable<MessageDto>>> GetMessageThread(string userName)
-        {
-            var currentUserName = User.GetUserName();
-
-            return Ok(await _messageRepository.GetMessageThread(currentUserName, userName));
-        }
-
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteMessage(int id)
         {
             var userName = User.GetUserName();
-            var message = await _messageRepository.GetMessage(id);
+            var message = await _unitOfWork.MessageRepository.GetMessage(id);
 
             if(message.Sender.UserName != userName && message.Recipient.UserName != userName) 
             {
@@ -97,9 +86,9 @@ namespace DatingApp.API.Controllers
                 message.RecipientDeleted = true;
             }
             
-            _messageRepository.DeleteMessage(message);
+            _unitOfWork.MessageRepository.DeleteMessage(message);
 
-            if(await _messageRepository.SaveAllAsync()) return Ok();
+            if(await _unitOfWork.Complete()) return Ok();
 
             return BadRequest("Falid to delete message.");
         }

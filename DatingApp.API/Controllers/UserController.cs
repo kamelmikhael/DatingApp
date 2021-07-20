@@ -18,15 +18,15 @@ namespace DatingApp.API.Controllers
     [Authorize]
     public class UserController : BaseApiController
     {
-        private readonly IUserRepository _repository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IPhotoService _photoService;
 
-        public UserController(IUserRepository repository,
+        public UserController(IUnitOfWork unitOfWork,
             IMapper mapper,
             IPhotoService photoService)
         {
-            _repository = repository;
+            _unitOfWork = unitOfWork;
             _mapper = mapper;
             _photoService = photoService;
         }
@@ -35,15 +35,15 @@ namespace DatingApp.API.Controllers
         [HttpGet]
         public async Task<ActionResult<PagedList<MemberDto>>> GetUsers([FromQuery]UserParams userParams)
         {
-            var currentUser = await _repository.GetMemberAsync(User.GetUserName());
-            userParams.CurrentUserName = currentUser.UserName;
+            var currentUserGender = await _unitOfWork.UserRepository.GetUserGenderAsync(User.GetUserName());
+            userParams.CurrentUserName = User.GetUserName();
 
             if(string.IsNullOrEmpty(userParams.Gender)) 
             {
-                userParams.Gender = currentUser.Gender == "male" ? "female" : "male";
+                userParams.Gender = currentUserGender == "male" ? "female" : "male";
             }
 
-            var users = await _repository.GetMembersAsync(userParams);
+            var users = await _unitOfWork.UserRepository.GetMembersAsync(userParams);
             Response.AddPaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages);
             return Ok(users);
         }
@@ -52,7 +52,7 @@ namespace DatingApp.API.Controllers
         [HttpGet("{username}", Name = "GetUser")]
         public async Task<ActionResult<MemberDto>> GetUser(string username)
         {
-            return Ok(await _repository.GetMemberAsync(username));
+            return Ok(await _unitOfWork.UserRepository.GetMemberAsync(username));
         }
 
         [HttpPut]
@@ -62,13 +62,13 @@ namespace DatingApp.API.Controllers
             // var userName = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userName = User.GetUserName();
 
-            var dbUser = await _repository.GetUserByUserNameAsync(userName);
+            var dbUser = await _unitOfWork.UserRepository.GetUserByUserNameAsync(userName);
             
             _mapper.Map(memberUpdateDto, dbUser);
 
-            _repository.Update(dbUser);
+            _unitOfWork.UserRepository.Update(dbUser);
 
-            if(await _repository.SaveAllAsync()) return NoContent();
+            if(await _unitOfWork.Complete()) return NoContent();
 
             return BadRequest("Failed to update user.");
         }
@@ -76,7 +76,7 @@ namespace DatingApp.API.Controllers
         [HttpPost("add-photo")]
         public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
         {
-            var dbUser = await _repository.GetUserByUserNameAsync(User.GetUserName());
+            var dbUser = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
 
             var uploadResult = await _photoService.AddPhotoAsync(file);
             if(uploadResult.Error != null) 
@@ -97,7 +97,7 @@ namespace DatingApp.API.Controllers
 
             dbUser.Photos.Add(photo);
 
-            if(await _repository.SaveAllAsync())
+            if(await _unitOfWork.Complete())
             {
                 return CreatedAtRoute("GetUser", new {username=dbUser.UserName}, _mapper.Map<PhotoDto>(photo));
             }
@@ -108,7 +108,7 @@ namespace DatingApp.API.Controllers
         [HttpPut("set-main-photo/{photoId}")]
         public async Task<ActionResult> SetMainPhoto(int photoId)
         {
-            var dbUser = await _repository.GetUserByUserNameAsync(User.GetUserName());
+            var dbUser = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
 
             var photo = dbUser.Photos.FirstOrDefault(x => x.Id == photoId);
 
@@ -125,7 +125,7 @@ namespace DatingApp.API.Controllers
 
             photo.IsMain = true;
 
-            if(await _repository.SaveAllAsync())
+            if(await _unitOfWork.Complete())
             {
                 return NoContent();
             }
@@ -136,7 +136,7 @@ namespace DatingApp.API.Controllers
         [HttpDelete("delete-photo/{photoId}")]
         public async Task<ActionResult> DeletePhoto(int photoId)
         {
-            var dbUser = await _repository.GetUserByUserNameAsync(User.GetUserName());
+            var dbUser = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
 
             var photoToDelete = dbUser.Photos.FirstOrDefault(x => x.Id == photoId);
 
@@ -160,7 +160,7 @@ namespace DatingApp.API.Controllers
 
             dbUser.Photos.Remove(photoToDelete);
 
-            if(await _repository.SaveAllAsync()) return Ok();
+            if(await _unitOfWork.Complete()) return Ok();
 
             return BadRequest("Failed to delete the photo.");
         }
